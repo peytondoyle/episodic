@@ -98,3 +98,13 @@ type UserEpisodeInsert = {
   watched: boolean;
   watched_at?: string | null;
 };
+
+export type TMDBShow = {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string;
+  first_air_date: string;
+  status: string;
+  homepage: string;
+};
