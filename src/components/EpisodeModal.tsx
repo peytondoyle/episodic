@@ -10,6 +10,22 @@ import {
 import { getShowDetailsWithUserProgress } from "@/lib/shows";
 import ToggleWatchedButton from "../components/ToggleWatchedButton";
 
+type Episode = {
+  id: string;
+  season: number;
+  episode: number;
+  title: string;
+  air_date: string;
+  userWatched: boolean;
+};
+
+type ShowData = {
+  show: {
+    title: string;
+  };
+  episodes: Episode[];
+};
+
 export default function EpisodeModal({
   showId,
   initialEpisodeId,
@@ -19,7 +35,7 @@ export default function EpisodeModal({
   initialEpisodeId?: string | null;
   onClose: () => void;
 }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<ShowData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,7 +77,7 @@ export default function EpisodeModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {data.episodes.map((ep: any) => (
+          {data.episodes.map((ep) => (
             <div
               key={ep.id}
               className={`p-2 border rounded ${

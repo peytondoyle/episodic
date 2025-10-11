@@ -5,9 +5,14 @@
 import { useState } from 'react';
 import { searchShows, getShowDetails } from '@/lib/tmdb';
 
+type TMDBShow = {
+  id: number;
+  name: string;
+};
+
 export default function AdminPage() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<TMDBShow[]>([]);
   const [loading, setLoading] = useState(false);
 
   async function handleSearch(e: React.FormEvent) {

@@ -46,7 +46,7 @@ export default function WatchlistPage() {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Watchlist</h1>
       {unwatchedShows.length === 0 ? (
-        <p className="text-gray-500">You're all caught up!</p>
+        <p className="text-gray-500">You&apos;re all caught up!</p>
       ) : (
         <div className="space-y-6">
           {unwatchedShows.map(entry => (
