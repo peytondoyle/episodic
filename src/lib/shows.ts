@@ -81,7 +81,7 @@ export async function insertShowFromTMDB(show: TMDBShow): Promise<string> {
   return showId;
 }
 
-type ShowDetailsWithProgress = {
+export type ShowDetailsWithProgress = {
   watched: boolean;
   watched_at: string | null;
   episode_id: string;
