@@ -4,6 +4,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks/clerk',
   '/api/cron/(.*)',
   '/api/auth/(.*)',
+  '/api/shows/search',  // TMDB search doesn't need user auth
   '/api/ok',
 ]);
 

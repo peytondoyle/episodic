@@ -147,9 +147,14 @@ export async function GET() {
     return NextResponse.json({ shows: showsWithProgress });
   } catch (error) {
     console.error('Error fetching user shows:', error);
-    if (error instanceof Error && error.message === 'Unauthorized') {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+
+    if (message === 'Unauthorized' || message.includes('Unauthorized')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    return NextResponse.json({ error: 'Failed to fetch shows' }, { status: 500 });
+    if (message.includes('not linked')) {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
