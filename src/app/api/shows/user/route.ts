@@ -3,10 +3,8 @@ import { getDbUserId } from '@/lib/auth';
 import { sql } from '@/lib/db';
 
 export async function GET() {
-  console.log('[shows/user] v8 - Request received');
   try {
     const userId = await getDbUserId();
-    console.log('[shows/user] User ID:', userId);
 
     // Get user's shows with show data
     const userShows = await sql`
@@ -167,11 +165,7 @@ export async function GET() {
       };
     });
 
-    console.log('[shows/user] Returning', showsWithProgress.length, 'shows');
-    if (showsWithProgress.length > 0) {
-      console.log('[shows/user] First show tmdb_id:', showsWithProgress[0].show.tmdb_id);
-    }
-    return NextResponse.json({ shows: showsWithProgress, _version: 'v8' });
+    return NextResponse.json({ shows: showsWithProgress });
   } catch (error) {
     console.error('Error fetching user shows:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';

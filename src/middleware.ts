@@ -6,7 +6,6 @@ const isPublicRoute = createRouteMatcher([
   '/api/cron/(.*)',
   '/api/auth/(.*)',
   '/api/admin/(.*)',  // Admin endpoints (should add proper auth later)
-  '/api/debug/(.*)',  // Debug endpoints (remove after debugging)
   '/api/shows/search',  // TMDB search doesn't need user auth
   '/api/ok',
 ]);
