@@ -126,14 +126,14 @@ export async function GET() {
 
       return {
         show: {
-          id: userShow.show_id,
+          id: String(userShow.show_id),
           title: userShow.title ?? '',
           slug: userShow.slug ?? '',
           poster_url: userShow.poster_url ?? null,
           backdrop_url: userShow.backdrop_url ?? null,
           status: userShow.show_status ?? 'unknown',
           synopsis: userShow.synopsis ?? null,
-          tmdb_id: userShow.tmdb_id ?? 0,
+          tmdb_id: userShow.tmdb_id ? String(userShow.tmdb_id) : '0',
           network: userShow.network ?? null,
           genre: userShow.genre ?? null,
           rating: userShow.show_rating ? parseFloat(userShow.show_rating) : null,
@@ -141,9 +141,9 @@ export async function GET() {
           updated_at: userShow.show_updated_at ?? null,
         },
         user_show: {
-          id: userShow.id,
-          user_id: userShow.user_id,
-          show_id: userShow.show_id,
+          id: String(userShow.id),
+          user_id: String(userShow.user_id),
+          show_id: String(userShow.show_id),
           status: userShow.status ?? 'watching',
           rating: userShow.rating ? parseInt(userShow.rating, 10) : null,
           added_at: userShow.added_at ?? null,
@@ -152,15 +152,15 @@ export async function GET() {
         watched_count: watchedCount,
         total_count: totalCount,
         next_episode: nextEpisode ? {
-          id: nextEpisode.id,
-          show_id: nextEpisode.show_id,
+          id: String(nextEpisode.id),
+          show_id: String(nextEpisode.show_id),
           season: nextEpisode.season,
           episode: nextEpisode.episode,
-          title: nextEpisode.title,
-          air_date: nextEpisode.air_date,
-          runtime: nextEpisode.runtime,
-          summary: nextEpisode.summary,
-          still_url: nextEpisode.still_url,
+          title: nextEpisode.title ?? '',
+          air_date: nextEpisode.air_date ?? null,
+          runtime: nextEpisode.runtime ?? null,
+          summary: nextEpisode.summary ?? null,
+          still_url: nextEpisode.still_url ?? null,
         } : null,
       };
     });
