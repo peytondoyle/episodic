@@ -15,7 +15,8 @@ import { clerkClient } from '@clerk/nextjs/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { id_token } = await request.json();
+    const body = await request.json();
+    const { id_token, first_name, last_name } = body;
 
     if (!id_token) {
       return NextResponse.json(
@@ -25,11 +26,6 @@ export async function POST(request: NextRequest) {
     }
 
     const client = await clerkClient();
-
-    // For Apple Sign In, we need to:
-    // 1. Decode the Apple identity token to get the user's email
-    // 2. Look up or create the user in Clerk
-    // 3. Generate a session token for the iOS app
 
     // Decode Apple identity token to extract claims
     const tokenParts = id_token.split('.');
@@ -47,6 +43,8 @@ export async function POST(request: NextRequest) {
     const appleUserId = payload.sub; // Apple user ID
     const email = payload.email;
 
+    console.log('[Apple Auth] Processing token for:', { appleUserId, email });
+
     if (!appleUserId) {
       return NextResponse.json(
         { error: 'Invalid token: missing subject' },
@@ -54,7 +52,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Look for existing user with this email or external ID
+    // Look for existing user with this email
     let user = null;
 
     if (email) {
@@ -62,13 +60,13 @@ export async function POST(request: NextRequest) {
         emailAddress: [email],
       });
       user = existingUsers.data[0] || null;
+      console.log('[Apple Auth] Found user by email:', user?.id);
     }
 
     if (!user) {
-      // Try finding by Apple user ID stored in external accounts
-      // This handles users who signed up with Apple but email wasn't shared
+      // Try finding by Apple user ID in external accounts
       const allUsers = await client.users.getUserList({
-        limit: 100,
+        limit: 500,
       });
 
       user = allUsers.data.find(u =>
@@ -76,33 +74,54 @@ export async function POST(request: NextRequest) {
           acc.provider === 'oauth_apple' && acc.externalId === appleUserId
         )
       ) || null;
+
+      if (user) {
+        console.log('[Apple Auth] Found user by Apple ID:', user.id);
+      }
     }
 
+    // If user doesn't exist, create them
     if (!user) {
-      // User doesn't exist - they need to sign up through Clerk first
-      // The iOS app should use Clerk SDK for initial sign up
-      return NextResponse.json(
-        { error: 'User not found. Please sign up first.' },
-        { status: 404 }
-      );
+      console.log('[Apple Auth] Creating new user');
+
+      if (!email) {
+        return NextResponse.json(
+          { error: 'Email required for new account. Please allow email sharing with Apple Sign In.' },
+          { status: 400 }
+        );
+      }
+
+      // Create new user in Clerk
+      user = await client.users.createUser({
+        emailAddress: [email],
+        firstName: first_name || undefined,
+        lastName: last_name || undefined,
+        skipPasswordRequirement: true,
+      });
+
+      console.log('[Apple Auth] Created new user:', user.id);
     }
 
     // Generate a sign-in token for this user
-    // This allows the iOS app to establish a session
     const signInToken = await client.signInTokens.createSignInToken({
       userId: user.id,
       expiresInSeconds: 3600,
     });
 
+    console.log('[Apple Auth] Generated sign-in token for user:', user.id);
+
     return NextResponse.json({
       user_id: user.id,
       external_id: user.externalId,
-      token: signInToken.token,
+      email: user.emailAddresses[0]?.emailAddress,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      sign_in_token: signInToken.token,
       expires_in: 3600,
     });
 
   } catch (error) {
-    console.error('Apple auth error:', error);
+    console.error('[Apple Auth] Error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Authentication failed' },
       { status: 500 }
