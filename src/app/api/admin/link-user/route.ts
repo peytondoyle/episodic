@@ -40,24 +40,23 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Try to update externalId, fall back to publicMetadata only
+    // First, set publicMetadata (this should always work)
+    await client.users.updateUser(clerk_user_id, {
+      publicMetadata: {
+        external_id: targetExternalId,
+      },
+    });
+    console.log(`[admin] Set publicMetadata for ${email} (${clerk_user_id}): ${targetExternalId}`);
+
+    // Try to also set externalId (may fail if taken by another user)
     try {
       await client.users.updateUser(clerk_user_id, {
         externalId: targetExternalId,
-        publicMetadata: {
-          external_id: targetExternalId,
-        },
       });
-      console.log(`[admin] Linked ${email} (${clerk_user_id}) with externalId: ${targetExternalId}`);
+      console.log(`[admin] Also set externalId: ${targetExternalId}`);
     } catch (externalIdError) {
-      console.log(`[admin] Failed to set externalId, trying publicMetadata only:`, externalIdError);
-      // Fall back to just publicMetadata
-      await client.users.updateUser(clerk_user_id, {
-        publicMetadata: {
-          external_id: targetExternalId,
-        },
-      });
-      console.log(`[admin] Linked ${email} (${clerk_user_id}) via publicMetadata: ${targetExternalId}`);
+      console.log(`[admin] Could not set externalId (may be taken):`, externalIdError);
+      // This is OK - publicMetadata is set and iOS will use that
     }
 
     return NextResponse.json({
