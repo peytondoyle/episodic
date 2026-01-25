@@ -1,12 +1,31 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 
 // DEBUG ENDPOINT - returns sample show data structure
 // Remove this after debugging
 export async function GET() {
   try {
-    // Use the same query as the main endpoint
-    const userId = '548f3665-61f7-4411-89e1-cc724903cfa1'; // Test user
+    // Check auth state
+    const { userId: clerkUserId } = await auth();
+    let dbUserId = '548f3665-61f7-4411-89e1-cc724903cfa1'; // Fallback test user
+    let authInfo: Record<string, unknown> = { clerkUserId: null, externalId: null, publicMetadata: null };
+
+    if (clerkUserId) {
+      const client = await clerkClient();
+      const user = await client.users.getUser(clerkUserId);
+      dbUserId = user.externalId ||
+        (user.publicMetadata as { external_id?: string })?.external_id ||
+        dbUserId;
+      authInfo = {
+        clerkUserId,
+        externalId: user.externalId,
+        publicMetadata: user.publicMetadata,
+        resolvedDbUserId: dbUserId,
+      };
+    }
+
+    const userId = dbUserId;
 
     const userShows = await sql`
       SELECT
@@ -73,9 +92,10 @@ export async function GET() {
     }));
 
     return NextResponse.json({
+      auth: authInfo,
       shows: allShows,
       count: allShows.length,
-      version: 'v6',
+      version: 'v7',
     });
   } catch (error) {
     console.error('Debug error:', error);
