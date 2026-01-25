@@ -34,17 +34,15 @@ export async function GET() {
       JOIN episodic_shows s ON s.id = us.show_id
       WHERE us.user_id = ${userId}::uuid
       ORDER BY us.updated_at DESC
-      LIMIT 1
+      LIMIT 20
     `;
 
     if (userShows.length === 0) {
       return NextResponse.json({ debug: 'no shows for user' });
     }
 
-    const userShow = userShows[0];
-
     // Build the exact response structure the main endpoint uses
-    const showResponse = {
+    const allShows = userShows.map(userShow => ({
       show: {
         id: String(userShow.show_id),
         title: userShow.title ?? '',
@@ -72,15 +70,12 @@ export async function GET() {
       watched_count: 0,
       total_count: 0,
       next_episode: null,
-    };
+    }));
 
     return NextResponse.json({
-      sample_show: showResponse,
-      raw_tmdb_id: {
-        value: userShow.tmdb_id,
-        type: typeof userShow.tmdb_id,
-      },
-      version: 'v5',
+      shows: allShows,
+      count: allShows.length,
+      version: 'v6',
     });
   } catch (error) {
     console.error('Debug error:', error);
