@@ -4,6 +4,7 @@ import { clerkClient } from '@clerk/nextjs/server';
 // Known Episodic users from Supabase - map email to UUID
 const KNOWN_USERS: Record<string, string> = {
   'p6doyle@gmail.com': '548f3665-61f7-4411-89e1-cc724903cfa1',
+  'peyton.doyle@icloud.com': '548f3665-61f7-4411-89e1-cc724903cfa1',
   'kaley.werder@gmail.com': '3ba378d6-20ce-4c50-9aee-e20ac498a99e',
 };
 
@@ -15,7 +16,7 @@ const KNOWN_USERS: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { clerk_user_id } = body;
+    const { clerk_user_id, external_id } = body;
 
     if (!clerk_user_id) {
       return NextResponse.json({ error: 'Missing clerk_user_id' }, { status: 400 });
@@ -27,27 +28,30 @@ export async function POST(request: NextRequest) {
     const user = await client.users.getUser(clerk_user_id);
     const email = user.emailAddresses[0]?.emailAddress?.toLowerCase();
 
-    if (!email) {
-      return NextResponse.json({ error: 'User has no email' }, { status: 400 });
+    // Use provided external_id or look up from known users
+    let targetExternalId = external_id;
+    if (!targetExternalId && email) {
+      targetExternalId = KNOWN_USERS[email];
     }
 
-    const supabaseId = KNOWN_USERS[email];
-    if (!supabaseId) {
-      return NextResponse.json({ error: `Unknown email: ${email}` }, { status: 400 });
+    if (!targetExternalId) {
+      return NextResponse.json({
+        error: `No external_id provided and email not in known users: ${email}`
+      }, { status: 400 });
     }
 
     // Update the user's externalId
     await client.users.updateUser(clerk_user_id, {
-      externalId: supabaseId,
+      externalId: targetExternalId,
     });
 
-    console.log(`[admin] Linked ${email} (${clerk_user_id}) to database UUID: ${supabaseId}`);
+    console.log(`[admin] Linked ${email} (${clerk_user_id}) to database UUID: ${targetExternalId}`);
 
     return NextResponse.json({
       success: true,
       email,
       clerk_user_id,
-      external_id: supabaseId,
+      external_id: targetExternalId,
     });
   } catch (error) {
     console.error('[admin] Link user error:', error);

@@ -5,6 +5,7 @@ import { WebhookEvent, clerkClient } from '@clerk/nextjs/server';
 // Known Episodic users from Supabase - map email to UUID
 const KNOWN_USERS: Record<string, string> = {
   'p6doyle@gmail.com': '548f3665-61f7-4411-89e1-cc724903cfa1',
+  'peyton.doyle@icloud.com': '548f3665-61f7-4411-89e1-cc724903cfa1',
   'kaley.werder@gmail.com': '3ba378d6-20ce-4c50-9aee-e20ac498a99e',
 };
 
