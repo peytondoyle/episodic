@@ -26,11 +26,12 @@ export async function POST(
 
     // Upsert the user_episode record
     await sql`
-      INSERT INTO episodic_user_episodes (user_id, episode_id, show_id, watched, watched_at)
-      VALUES (${userId}::uuid, ${episodeId}, ${show_id}::uuid, ${watched}, ${watchedTimestamp})
+      INSERT INTO episodic_user_episodes (user_id, episode_id, show_id, watched, watched_at, skipped)
+      VALUES (${userId}::uuid, ${episodeId}, ${show_id}::uuid, ${watched}, ${watchedTimestamp}, false)
       ON CONFLICT (user_id, episode_id) DO UPDATE SET
         watched = EXCLUDED.watched,
-        watched_at = EXCLUDED.watched_at
+        watched_at = EXCLUDED.watched_at,
+        skipped = false
     `;
 
     return NextResponse.json({ success: true, watched });

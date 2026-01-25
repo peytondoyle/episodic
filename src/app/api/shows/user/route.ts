@@ -69,15 +69,32 @@ export async function GET() {
       ORDER BY season, episode
     `;
 
-    // Get watched episode IDs for this user
-    const watchedEpisodes = await sql`
-      SELECT episode_id
+    // Get watched/skipped episode IDs for this user
+    const userEpisodeRows = await sql`
+      SELECT episode_id, show_id, watched, skipped
       FROM episodic_user_episodes
       WHERE user_id = ${userId}::uuid
-        AND watched = true
         AND show_id = ANY(${showIds}::uuid[])
     `;
-    const watchedIds = new Set(watchedEpisodes.map(e => e.episode_id));
+
+    const watchedByShow = new Map<string, Set<string>>();
+    const skippedByShow = new Map<string, Set<string>>();
+
+    for (const row of userEpisodeRows) {
+      if (row.watched) {
+        if (!watchedByShow.has(row.show_id)) {
+          watchedByShow.set(row.show_id, new Set());
+        }
+        watchedByShow.get(row.show_id)!.add(row.episode_id);
+      }
+
+      if (row.skipped) {
+        if (!skippedByShow.has(row.show_id)) {
+          skippedByShow.set(row.show_id, new Set());
+        }
+        skippedByShow.get(row.show_id)!.add(row.episode_id);
+      }
+    }
 
     // Group episodes by show and find first unwatched
     const episodesByShow = new Map<string, typeof allEpisodes>();
@@ -90,7 +107,11 @@ export async function GET() {
 
     const nextEpisodeMap = new Map<string, typeof allEpisodes[0]>();
     for (const [showId, episodes] of episodesByShow) {
-      const nextEp = episodes.find(ep => !watchedIds.has(ep.id));
+      const watchedIds = watchedByShow.get(showId) || new Set<string>();
+      const skippedIds = skippedByShow.get(showId) || new Set<string>();
+      const nextEp = episodes.find(
+        ep => !watchedIds.has(ep.id) && !skippedIds.has(ep.id)
+      );
       if (nextEp) {
         nextEpisodeMap.set(showId, nextEp);
       }

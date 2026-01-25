@@ -60,19 +60,25 @@ export async function GET() {
 
       if (episodes.length === 0) continue;
 
-      // Get user's watched episodes for this show
-      const watchedEpisodes = await sql`
-        SELECT episode_id
+      // Get user's watched/skipped episodes for this show
+      const userEpisodeRows = await sql`
+        SELECT episode_id, watched, skipped
         FROM episodic_user_episodes
         WHERE user_id = ${userId}::uuid
           AND show_id = ${showId}::uuid
-          AND watched = true
       `;
 
-      const watchedIds = new Set(watchedEpisodes.map(e => e.episode_id));
+      const watchedIds = new Set(
+        userEpisodeRows.filter(row => row.watched).map(row => row.episode_id)
+      );
+      const skippedIds = new Set(
+        userEpisodeRows.filter(row => row.skipped).map(row => row.episode_id)
+      );
 
       // Find first unwatched episode
-      const nextEpisode = episodes.find(ep => !watchedIds.has(ep.id));
+      const nextEpisode = episodes.find(
+        ep => !watchedIds.has(ep.id) && !skippedIds.has(ep.id)
+      );
 
       if (nextEpisode) {
         const watchedCount = watchedIds.size;
@@ -83,7 +89,7 @@ export async function GET() {
 
         // Count available episodes (unwatched AND already aired)
         const availableCount = episodes.filter(ep => {
-          if (watchedIds.has(ep.id)) return false;
+          if (watchedIds.has(ep.id) || skippedIds.has(ep.id)) return false;
           if (!ep.air_date) return false;
           return ep.air_date < todayInShowTZ;
         }).length;

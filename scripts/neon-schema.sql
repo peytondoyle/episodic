@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS episodic_user_episodes (
     watched         BOOLEAN DEFAULT FALSE,
     watched_at      TIMESTAMPTZ,
     rating          SMALLINT CHECK (rating >= 1 AND rating <= 5),
+    notes           TEXT,
     skipped         BOOLEAN DEFAULT FALSE,
     watch_source    TEXT,
     UNIQUE(user_id, episode_id)

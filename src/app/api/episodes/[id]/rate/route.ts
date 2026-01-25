@@ -28,12 +28,13 @@ export async function POST(
 
     // Upsert the user_episode record with rating (rating implies watched)
     await sql`
-      INSERT INTO episodic_user_episodes (user_id, episode_id, show_id, rating, watched, watched_at)
-      VALUES (${userId}::uuid, ${episodeId}, ${show_id}::uuid, ${rating}, true, NOW())
+      INSERT INTO episodic_user_episodes (user_id, episode_id, show_id, rating, watched, watched_at, skipped)
+      VALUES (${userId}::uuid, ${episodeId}, ${show_id}::uuid, ${rating}, true, NOW(), false)
       ON CONFLICT (user_id, episode_id) DO UPDATE SET
         rating = EXCLUDED.rating,
         watched = true,
-        watched_at = COALESCE(episodic_user_episodes.watched_at, NOW())
+        watched_at = COALESCE(episodic_user_episodes.watched_at, NOW()),
+        skipped = false
     `;
 
     return NextResponse.json({ success: true, rating });

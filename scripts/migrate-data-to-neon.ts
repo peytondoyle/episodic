@@ -45,7 +45,26 @@ async function migrateData() {
           ${show.last_synced_at}, ${show.air_time}, ${show.air_time_source}, ${show.air_timezone},
           ${show.watch_providers ? JSON.stringify(show.watch_providers) : null}, ${show.watch_providers_updated_at}
         )
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title,
+          slug = EXCLUDED.slug,
+          poster_url = EXCLUDED.poster_url,
+          backdrop_url = EXCLUDED.backdrop_url,
+          status = EXCLUDED.status,
+          synopsis = EXCLUDED.synopsis,
+          tmdb_id = EXCLUDED.tmdb_id,
+          network = EXCLUDED.network,
+          genre = EXCLUDED.genre,
+          rating = EXCLUDED.rating,
+          first_air_date = EXCLUDED.first_air_date,
+          created_at = EXCLUDED.created_at,
+          updated_at = EXCLUDED.updated_at,
+          last_synced_at = EXCLUDED.last_synced_at,
+          air_time = EXCLUDED.air_time,
+          air_time_source = EXCLUDED.air_time_source,
+          air_timezone = EXCLUDED.air_timezone,
+          watch_providers = EXCLUDED.watch_providers,
+          watch_providers_updated_at = EXCLUDED.watch_providers_updated_at
       `;
     } catch (e) {
       console.error(`  Error migrating show ${show.title}:`, e);
@@ -74,7 +93,16 @@ async function migrateData() {
           ${ep.id}, ${ep.show_id}::uuid, ${ep.season}, ${ep.episode}, ${ep.title},
           ${ep.air_date}, ${ep.runtime}, ${ep.summary}, ${ep.still_url}, ${ep.created_at}
         )
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE SET
+          show_id = EXCLUDED.show_id,
+          season = EXCLUDED.season,
+          episode = EXCLUDED.episode,
+          title = EXCLUDED.title,
+          air_date = EXCLUDED.air_date,
+          runtime = EXCLUDED.runtime,
+          summary = EXCLUDED.summary,
+          still_url = EXCLUDED.still_url,
+          created_at = EXCLUDED.created_at
       `;
       epCount++;
     } catch (e) {
@@ -103,7 +131,11 @@ async function migrateData() {
           ${us.id}::uuid, ${us.user_id}::uuid, ${us.show_id}::uuid, ${us.status},
           ${us.rating}, ${us.added_at}, ${us.updated_at}
         )
-        ON CONFLICT (user_id, show_id) DO NOTHING
+        ON CONFLICT (user_id, show_id) DO UPDATE SET
+          status = EXCLUDED.status,
+          rating = EXCLUDED.rating,
+          added_at = EXCLUDED.added_at,
+          updated_at = EXCLUDED.updated_at
       `;
     } catch (e) {
       console.error(`  Error migrating user_show:`, e);
@@ -127,12 +159,19 @@ async function migrateData() {
     try {
       await sql`
         INSERT INTO episodic_user_episodes (
-          id, user_id, episode_id, show_id, watched, watched_at, rating, skipped, watch_source
+          id, user_id, episode_id, show_id, watched, watched_at, rating, notes, skipped, watch_source
         ) VALUES (
           ${ue.id}::uuid, ${ue.user_id}::uuid, ${ue.episode_id}, ${ue.show_id}::uuid,
-          ${ue.watched}, ${ue.watched_at}, ${ue.rating}, ${ue.skipped || false}, ${ue.watch_source}
+          ${ue.watched}, ${ue.watched_at}, ${ue.rating}, ${ue.notes || null}, ${ue.skipped || false}, ${ue.watch_source}
         )
-        ON CONFLICT (user_id, episode_id) DO NOTHING
+        ON CONFLICT (user_id, episode_id) DO UPDATE SET
+          show_id = EXCLUDED.show_id,
+          watched = EXCLUDED.watched,
+          watched_at = EXCLUDED.watched_at,
+          rating = EXCLUDED.rating,
+          notes = EXCLUDED.notes,
+          skipped = EXCLUDED.skipped,
+          watch_source = EXCLUDED.watch_source
       `;
       ueCount++;
     } catch (e) {

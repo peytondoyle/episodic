@@ -32,11 +32,12 @@ export async function POST(
     const now = new Date().toISOString();
     for (const episode of episodes) {
       await sql`
-        INSERT INTO episodic_user_episodes (user_id, episode_id, show_id, watched, watched_at)
-        VALUES (${userId}::uuid, ${episode.id}, ${showId}::uuid, true, ${now})
+        INSERT INTO episodic_user_episodes (user_id, episode_id, show_id, watched, watched_at, skipped)
+        VALUES (${userId}::uuid, ${episode.id}, ${showId}::uuid, true, ${now}, false)
         ON CONFLICT (user_id, episode_id) DO UPDATE SET
           watched = true,
-          watched_at = COALESCE(episodic_user_episodes.watched_at, ${now})
+          watched_at = COALESCE(episodic_user_episodes.watched_at, ${now}),
+          skipped = false
       `;
     }
 
