@@ -165,7 +165,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ shows: showsWithProgress });
+    return NextResponse.json({ shows: showsWithProgress, _version: 'v5' });
   } catch (error) {
     console.error('Error fetching user shows:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
