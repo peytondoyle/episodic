@@ -40,12 +40,25 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Update the user's externalId
-    await client.users.updateUser(clerk_user_id, {
-      externalId: targetExternalId,
-    });
-
-    console.log(`[admin] Linked ${email} (${clerk_user_id}) to database UUID: ${targetExternalId}`);
+    // Try to update externalId, fall back to publicMetadata only
+    try {
+      await client.users.updateUser(clerk_user_id, {
+        externalId: targetExternalId,
+        publicMetadata: {
+          external_id: targetExternalId,
+        },
+      });
+      console.log(`[admin] Linked ${email} (${clerk_user_id}) with externalId: ${targetExternalId}`);
+    } catch (externalIdError) {
+      console.log(`[admin] Failed to set externalId, trying publicMetadata only:`, externalIdError);
+      // Fall back to just publicMetadata
+      await client.users.updateUser(clerk_user_id, {
+        publicMetadata: {
+          external_id: targetExternalId,
+        },
+      });
+      console.log(`[admin] Linked ${email} (${clerk_user_id}) via publicMetadata: ${targetExternalId}`);
+    }
 
     return NextResponse.json({
       success: true,
