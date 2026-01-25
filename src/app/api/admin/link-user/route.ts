@@ -53,10 +53,13 @@ export async function POST(request: NextRequest) {
       clerk_user_id,
       external_id: targetExternalId,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[admin] Link user error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorDetails = JSON.stringify(error, Object.getOwnPropertyNames(error as object));
+    console.error('[admin] Error details:', errorDetails);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to link user' },
+      { error: errorMessage, details: errorDetails },
       { status: 500 }
     );
   }
