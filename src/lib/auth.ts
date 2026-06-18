@@ -1,9 +1,9 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
+import { sql } from './db';
 
 /**
  * Get the database user ID for the currently authenticated Clerk user.
- * Uses Clerk's externalId which stores the original Supabase UUID.
- * Falls back to publicMetadata.external_id if externalId is not set.
+ * Looks up the mapping in user_id_mapping table (populated by webhook + backfill).
  */
 export async function getDbUserId(): Promise<string> {
   const { userId } = await auth();
@@ -12,18 +12,15 @@ export async function getDbUserId(): Promise<string> {
     throw new Error('Unauthorized');
   }
 
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
+  const result = await sql`
+    SELECT db_user_id FROM user_id_mapping WHERE clerk_user_id = ${userId}
+  `;
 
-  // Check externalId first, then fall back to publicMetadata
-  const dbUserId = user.externalId ||
-    (user.publicMetadata as { external_id?: string })?.external_id;
-
-  if (!dbUserId) {
+  if (result.length === 0) {
     throw new Error('User not linked to database. Contact support.');
   }
 
-  return dbUserId;
+  return result[0].db_user_id;
 }
 
 /**

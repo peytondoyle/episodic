@@ -1,13 +1,7 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
-import { WebhookEvent, clerkClient } from '@clerk/nextjs/server';
-
-// Known Episodic users from Supabase - map email to UUID
-const KNOWN_USERS: Record<string, string> = {
-  'p6doyle@gmail.com': '548f3665-61f7-4411-89e1-cc724903cfa1',
-  'peyton.doyle@icloud.com': '548f3665-61f7-4411-89e1-cc724903cfa1',
-  'kaley.werder@gmail.com': '3ba378d6-20ce-4c50-9aee-e20ac498a99e',
-};
+import { WebhookEvent } from '@clerk/nextjs/server';
+import { sql } from '@/lib/db';
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -50,28 +44,20 @@ export async function POST(req: Request) {
 
     console.log(`[webhook] New user created: ${email} (Clerk ID: ${id})`);
 
-    // If user already has externalId, we're done (imported user)
-    if (external_id) {
-      console.log(`[webhook] User already has externalId: ${external_id}`);
-      return new Response('OK', { status: 200 });
-    }
+    // If user has external_id (imported from Supabase), use that UUID.
+    // Otherwise generate a new one for brand-new users.
+    const dbUserId = external_id || crypto.randomUUID();
 
-    // Check if this email matches a known Episodic user
-    if (email && KNOWN_USERS[email]) {
-      const supabaseId = KNOWN_USERS[email];
-      console.log(`[webhook] Linking ${email} to Supabase UUID: ${supabaseId}`);
-
-      try {
-        const client = await clerkClient();
-        await client.users.updateUser(id, {
-          externalId: supabaseId,
-        });
-        console.log(`[webhook] Successfully set externalId for ${email}`);
-      } catch (err) {
-        console.error(`[webhook] Failed to set externalId:`, err);
-      }
-    } else {
-      console.log(`[webhook] Unknown user email: ${email} - no externalId set`);
+    try {
+      await sql`
+        INSERT INTO user_id_mapping (clerk_user_id, db_user_id, email)
+        VALUES (${id}, ${dbUserId}::uuid, ${email})
+        ON CONFLICT (clerk_user_id) DO NOTHING
+      `;
+      console.log(`[webhook] Mapped ${email} -> ${dbUserId}`);
+    } catch (err) {
+      console.error(`[webhook] Failed to insert user mapping:`, err);
+      return new Response('Failed to create user mapping', { status: 500 });
     }
   }
 

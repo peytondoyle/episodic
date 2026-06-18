@@ -3,16 +3,14 @@ import { sql } from '@/lib/db';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY!;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify cron secret if configured
-    if (CRON_SECRET) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader !== `Bearer ${CRON_SECRET}`) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    // Verify cron secret — always required
+    const cronSecret = process.env.CRON_SECRET;
+    const authHeader = request.headers.get('authorization');
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse request body for optional filters

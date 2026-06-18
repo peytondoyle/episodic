@@ -2,14 +2,11 @@ import { NextResponse } from "next/server";
 
 export function GET() {
   const must = [
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "R2_ACCOUNT_ID",
-    "R2_ACCESS_KEY_ID",
-    "R2_SECRET_ACCESS_KEY",
-    "R2_BUCKET",
-    "NEXT_PUBLIC_R2_PUBLIC_BASE",
+    "DATABASE_URL",
+    "CLERK_SECRET_KEY",
+    "CLERK_WEBHOOK_SECRET",
+    "TMDB_API_KEY",
+    "CRON_SECRET",
   ];
   const missing = must.filter((k) => !process.env[k]);
   return NextResponse.json({
