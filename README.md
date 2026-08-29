@@ -1,3 +1,11 @@
+<!-- Archive-status header added 2026-08-29; original content below is unchanged. -->
+> **ARCHIVED — TV & movie episode tracker — web (Next.js).**
+>
+> - **Status:** Archived mid-migration
+> - **Died:** Abandoned during a Supabase -> Neon/Lucia migration; last commit 2026-06-18 is a WIP migration snapshot on branch dev.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
